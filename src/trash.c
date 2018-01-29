@@ -1,6 +1,7 @@
 #include<stdio.h>
 #include<unistd.h>
 #include<stdlib.h>
+#include<string.h>
 
 bool active=0;
 bool logging=0;
@@ -68,6 +69,27 @@ char *in(void)//reads input to buffer
   }
 }
 
+char **split(char *input)
+{
+  int bsz = 64;
+  int pos=0;
+  char *token;
+  char **tokens = malloc(bsz * sizeof(char*));
+  if(!tokens)
+  {
+    fprintf(stderr, "malloc fail\n");
+    exit(-1);
+  }
+  strtok(input,"\t \a");//defined in string.h, used to split string into tokens
+  while (token != NULL)
+  {
+    tokens[pos] = token;
+    pos++;
+    token=strtok(NULL, "\t \n");
+  }
+  tokens[pos] = NULL;
+  return tokens;
+}
 
 int main(int argc, char **argv)
 {
