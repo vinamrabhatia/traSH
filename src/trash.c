@@ -1,28 +1,7 @@
-#include<stdio.h>
-#include<unistd.h>
-#include<stdlib.h>
-#include<string.h>
-#include<sys/wait.h> // for waitpid
-#include<sys/stat.h> // for stat()
-#include<fcntl.h>
+#include "trash.h"
 
-bool active=0;
-bool logging=0;
-
-int isfile(char *path);
-int entry(char **arg);
-int ext(char **arg);
-int log(char **arg);
-int unlog(char **arg);
-int viewcmdlog(char **arg);
-int viewoutlog(char **arg);
-int changedir(char **arg);
-int external(char **arg);
-int do_command(char **args, int pipes);
-
-/*int sil = open("stdinlog.txt", O_APPEND | O_WRONLY);
-int sol = open("stdoutlog.txt", O_APPEND | O_WRONLY);
-int sel = open("stderrlog.txt", O_APPEND | O_WRONLY);*/
+int active=0;
+int logging=0;
 
 int changedir(char **arg)
 {
@@ -38,31 +17,6 @@ int log(char **arg)
 	logging=1;
 	//dup2(sil,fileno(stdin));
 }
-/*//replaced by function with piping support
-int external(char **arg)
-{
-	pid_t pid;
-	int status;
-	pid=fork();
-	char temp[64]="./";
-	if(pid==0)
-	{
-		if(execvp(arg[0],arg)==-1)//execvp searches PATH for arg[0]
-		{
-		strcat(temp,arg[0]);
-		if(execvp(temp,arg)==-1)
-			perror("traSH error ");
-	}
-		exit(-1);
-	}
-	else if (pid<0)
-		perror("trash ");
-	else do
-	{
-		waitpid(pid, &status, 0);
-	} while(!WIFSIGNALED(status)&&!WCOREDUMP(status)&&!WIFEXITED(status));
-	return 1;
-}*/
 
 int ext(char **arg)
 {
@@ -275,7 +229,7 @@ int do_command(char **args, int pipes)
     }
 }
 
-int main(int argc, char **argv)
+void teh_code(int argc, char **argv)
 {
 	char *input;
 	char **arg;
