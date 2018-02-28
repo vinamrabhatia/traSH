@@ -1,1 +1,2 @@
-gcc trash.c main.c -0 a.exe
+all:
+	gcc trash.c driver.c -o a.exe
