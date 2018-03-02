@@ -1,6 +1,6 @@
 #include"trash.h"
 
-int main(int argc, char **argv)
+int main()
 {
-	teh_code(argc,argv);
+	the_code();
 }

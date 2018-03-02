@@ -1,17 +1,19 @@
 #include "trash.h"
 
-int active=0;
+int active=1;
 int logging=0;
+int pipc;
 //int isfile(char *path);
 int entry(char **);
 int ext(char **);
-int log(char **);
+int logz(char **);
 int unlog(char **);
 int viewcmdlog(char **);
 int viewoutlog(char **);
 int changedir(char **);
 int external(char **);
 int do_command(char **, int );
+void tee(const char*); 
 
 int changedir(char **arg)
 {
@@ -22,10 +24,56 @@ int changedir(char **arg)
 	return 1;
 }
 
-int log(char **arg)
+void tee(const char* fname) 
+{
+	int pipe_fd[2];
+
+	pipe(pipe_fd);
+	const pid_t pid = fork();
+	if(!pid) 
+	{
+		close(pipe_fd[1]); // Close unused write end
+		FILE* logFile = fname? fopen(fname,"a"): NULL;
+		if(fname && !logFile)
+    		printf("err\n");//fprintf(stderr,"cannot open log file \"%s\": %d (%s)\n",fname,0,strerror(errno));
+    	char ch;
+    	while(read(pipe_fd[0],&ch,1) > 0) 
+		{
+    		putchar(ch);
+    		if(logFile)
+    			fputc(ch,logFile);
+    		if('\n'==ch) 
+			{
+    			fflush(stdout);
+    			if(logFile)
+    				fflush(logFile);
+    		}
+    	}
+    	putchar('\n');
+    	close(pipe_fd[0]);
+    	if(logFile)
+    		fclose(logFile);
+    	exit(EXIT_SUCCESS);
+    } 
+	else 
+	{
+    	close(pipe_fd[0]); // Close unused read end
+    	// redirect stdout and stderr
+    	dup2(pipe_fd[1],STDOUT_FILENO);  
+    	dup2(pipe_fd[1],STDERR_FILENO);  
+    	close(pipe_fd[1]);  
+    }
+}
+
+int logz(char **arg)
 {
 	logging=1;
 	//dup2(sil,fileno(stdin));
+}
+
+int unlog(char **arg)
+{
+	logging=0;
 }
 
 int ext(char **arg)
@@ -57,7 +105,7 @@ char *in(void)//reads input to buffer
 	int pos = 0;
 	char *buffer = malloc(sizeof(char) * bsz);
 	int ch;
-
+	pipc=0;
 	if (!buffer)
 	{
 		fprintf(stderr, "Memory allocation for input buffer failed\n");
@@ -67,6 +115,10 @@ char *in(void)//reads input to buffer
 	while (1)
 	{
 		ch = getchar();
+		if(ch=='|')
+		{
+			pipc++;
+		}
 		if (ch == EOF || ch == '\n')
 		{
 			buffer[pos] = '\0';
@@ -128,9 +180,11 @@ int run(char **arg)
 	else if(strcmp(arg[0],"entry")==0)
 		return entry(arg);
 	else if(strcmp(arg[0],"log")==0)
-		return log(arg);
+		return logz(arg);
+	else if(strcmp(arg[0],"unlog")==0)
+		return unlog(arg);
 	else
-		return do_command(arg, 1);
+		return do_command(arg, pipc);
 }
 
 int do_command(char **args, int pipes) 
@@ -160,16 +214,13 @@ int do_command(char **args, int pipes)
     int commandStarts[10];
     commandStarts[0] = 0;
 
-    // This loop sets all of the pipes to NULL
-    // And creates an array of where the next
-    // Command starts
+    // This loop sets all of the pipes to NULL And creates an array of where the next Command starts
 
     while (args[k] != NULL)
 	{
         if(!strcmp(args[k], "|"))
 		{
             args[k] = NULL;
-            // printf("args[%d] is now NULL", k);
             commandStarts[s] = k+1;
             s++;
         }
@@ -180,16 +231,20 @@ int do_command(char **args, int pipes)
 
     for (i = 0; i < commands; ++i) 
 	{
-        // place is where in args the program should
-        // start running when it gets to the execution
-        // command
         place = commandStarts[i];
 
         pid = fork();
         if(pid == 0) 
 		{
             //if not last command
-            if(i < pipes)
+			if(i==pipes&&logging)
+			{
+				int fd = open("out.log", O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+				dup2(fd, 1);
+				dup2(fd, 2);
+				close(fd);
+			}
+			if(i < pipes)
 			{
                 if(dup2(pipefds[j + 1], 1) < 0)
 				{
@@ -239,7 +294,7 @@ int do_command(char **args, int pipes)
     }
 }
 
-void teh_code(int argc, char **argv)
+void the_code(int argc, char **argv)
 {
 	char *input;
 	char **arg;

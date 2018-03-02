@@ -1,0 +1,10 @@
+#include "trash.h"
+
+int active=1;
+int logging=0;
+int pipc;
+//int isfile(char *path);
+int entry(char **);
+int ext(char **);
+int logz(char **);
+int unlog(char **);
