@@ -153,12 +153,12 @@ char **split(char *input)
 		fprintf(stderr, "malloc fail\n");
 		exit(-1);
 	}
-	strtok(input,"\t \a");//defined in string.h, used to split string into tokens
+	token=strsep(&input,"\t \a");//defined in string.h, used to split string into tokens
 	while (token != NULL)
 	{
 		tokens[pos] = token;
 		pos++;
-		token=strtok(NULL, "\t \n");
+		token=strsep(&input, "\t \n");
 	}
 	tokens[pos] = NULL;
 	return tokens;
