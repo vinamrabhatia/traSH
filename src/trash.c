@@ -1,5 +1,6 @@
 #include "trash.h"
 
+volatile bool running = 0;
 int active=1;
 int logging=0;
 int pipc;
@@ -114,19 +115,30 @@ char *in(void)//reads input to buffer
 
 	while (1)
 	{
+		//fflush(stdout);
+		//system("stty -echo");
 		ch = getchar();
+		//system("stty echo");
+		if(ch==EOF && !running)
+		{
+			putchar('\n');
+			exit(0);
+		}
 		if(ch=='|')
 		{
 			pipc++;
 		}
-		if (ch == EOF || ch == '\n')
+		if (ch == '\n')
 		{
 			buffer[pos] = '\0';
+			//printf("\n");
 			return buffer;
 		}
+		else if(ch == '\t'){}
 		else
 		{
 			buffer[pos] = ch;
+			//printf("%c",ch);
 		}
 		pos++;
 		if (pos >= bsz)
@@ -154,6 +166,7 @@ char **split(char *input)
 		exit(-1);
 	}
 	token=strsep(&input,"\t \a");//defined in string.h, used to split string into tokens
+
 	while (token != NULL)
 	{
 		tokens[pos] = token;
@@ -294,17 +307,28 @@ int do_command(char **args, int pipes)
     }
 }
 
+void intHandler(int dummy) {
+	if(!running) {
+		printf("\ntraSH $ ");
+		fflush(stdout);
+	}
+	return;
+}
+
 void the_code(int argc, char **argv)
 {
 	char *input;
 	char **arg;
 	int ret;
+	signal(SIGINT, intHandler);
 	while(1)
 	{
 		printf("traSH $ ");
 		input=in();
 		arg=split(input);
+		running = 1;
 		ret=run(arg);
+		running = 0;
 		free(input);
 		free(arg);
 	}
